@@ -27,10 +27,10 @@ chrome.runtime.onMessage.addListener(({ title, payload }) => {
       run = !run;
       break;
     case 'MSG_TIMESKIP':
-      console.log('skipped to', payload);
+      socket.emit('_skip', payload);
       break;
     case 'MSG_PAUSE':
-      console.log('paused?', payload);
+      socket.emit('_pause', payload);
       break;
   }
 });
