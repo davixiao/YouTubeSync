@@ -1,8 +1,9 @@
 //const socket = io('localhost:3000');
-// const socket = io.connect('http://localhost:3000');
-// socket.on('message', (msg) => {
-//   console.log(msg);
-// });
+const socket = io.connect('http://localhost:3000');
+socket.on('message', (msg) => {
+  console.log(msg);
+  socket.emit('test', 'from the client');
+});
 
 let run = false;
 let change = 0;
