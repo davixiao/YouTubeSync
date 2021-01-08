@@ -1,6 +1,12 @@
 const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
+const {
+  clientJoin,
+  getCurrentClient,
+  clientLeave,
+  getRoomClients,
+} = require('./clients.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -11,34 +17,25 @@ app.get('/', (req, res) => {
   res.send('Youtube Sync Server');
 });
 
-let sockets = [];
-
-// keep track of satisfied time requests
-let satisfiedRequests = [];
-
-const isSatisfied = () => {
-  return satisfiedRequests.length === sockets.length;
-  //return satisfiedRequests.every((req) => req.returned === true);
-};
-
-const calcAvgTime = () => {
-  return (
-    satisfiedRequests.reduce((acc, vidTime) => acc + vidTime) /
-    satisfiedRequests.length
-  );
-};
-
 // Run when client connects
 io.on('connection', (socket) => {
-  sockets.push(socket);
-  //console.log(sockets.length);
-  socket.emit('joinRoom', 'CONNECTED TO SERVER');
+  socket.emit('serverMessage', 'CONNECTED TO SERVER');
 
-  // Every 5 seconds, check if users are in sync.
-  setInterval(() => {
-    console.log('sent time request');
-    socket.emit('requestTime');
-  }, 10000);
+  socket.on('joinRoom', ({ username, room }) => {
+    const client = clientJoin(socket.id, username, room);
+    socket.join(client.room);
+    socket.emit('roomMessage', 'CONNECTED TO ROOM');
+    socket.broadcast
+      .to(client.room)
+      .emit('roomMessage', `${client.username} has joined ${client.room}.`);
+    io.to(client.room).emit('roomMessage', getRoomClients(client.room));
+  });
+
+  // Every 5 seconds, request for timecode from room leader.
+  // setInterval(() => {
+  //   console.log('sent time request to room leader');
+  //   io.to(clients[0].id).emit('requestTime');
+  // }, 10000);
 
   socket.on('sendTime', ({ currentTime }) => {
     console.log('received time request from: ', socket.id, currentTime);
@@ -62,9 +59,12 @@ io.on('connection', (socket) => {
     console.log('paused?', payload);
   });
 
-  socket.on('_disconnect', () => {
-    //console.log('user disconnected');
-    socket.disconnect();
+  socket.on('disconnect', () => {
+    const client = clientLeave(socket.id);
+    if (client) {
+      io.to(client.room).emit('roomMessage', `${client.username} has left.`);
+      io.to(client.room).emit('roomMessage', getRoomClients(client.room));
+    }
   });
 });
 
