@@ -1,8 +1,8 @@
 //const socket = io('localhost:3000');
-const socket = io.connect('http://localhost:3000');
-socket.on('message', (msg) => {
-  console.log(msg);
-});
+// const socket = io.connect('http://localhost:3000');
+// socket.on('message', (msg) => {
+//   console.log(msg);
+// });
 
 let run = false;
 let change = 0;
@@ -19,9 +19,19 @@ const msgFront = () => {
   });
 };
 
-chrome.runtime.onMessage.addListener((req) => {
-  run = !run;
-  console.log(run);
+chrome.runtime.onMessage.addListener(({ title, payload }) => {
+  console.log(title);
+  switch (title) {
+    case 'MSG_POPUP':
+      run = !run;
+      break;
+    case 'MSG_TIMESKIP':
+      console.log('skipped to', payload);
+      break;
+    case 'MSG_PAUSE':
+      console.log('paused?', payload);
+      break;
+  }
 });
 
 setInterval(msgFront, 5000);
