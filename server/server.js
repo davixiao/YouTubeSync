@@ -13,19 +13,43 @@ app.get('/', (req, res) => {
 
 let sockets = [];
 
+// keep track of satisfied time requests
+let satisfiedRequests = [];
+
+const isSatisfied = () => {
+  return satisfiedRequests.length === sockets.length;
+  //return satisfiedRequests.every((req) => req.returned === true);
+};
+
+const calcAvgTime = () => {
+  return (
+    satisfiedRequests.reduce((acc, vidTime) => acc + vidTime) /
+    satisfiedRequests.length
+  );
+};
+
 // Run when client connects
 io.on('connection', (socket) => {
-  //sockets.push(socket);
+  sockets.push(socket);
   //console.log(sockets.length);
   socket.emit('joinRoom', 'CONNECTED TO SERVER');
 
   // Every 5 seconds, check if users are in sync.
   setInterval(() => {
+    console.log('sent time request');
     socket.emit('requestTime');
-  }, 5000);
+  }, 10000);
 
-  socket.on('sendTime', (currentTime) => {
-    console.log(socket.id, ':', currentTime);
+  socket.on('sendTime', ({ currentTime }) => {
+    console.log('received time request from: ', socket.id, currentTime);
+    satisfiedRequests.push(currentTime);
+    console.log('array length: ', satisfiedRequests.length);
+    console.log('sockets length: ', sockets.length);
+    if (isSatisfied()) {
+      console.log('sent new time:', calcAvgTime());
+      io.emit('adjustTime', calcAvgTime());
+      satisfiedRequests = [];
+    }
   });
 
   socket.on('_skip', (payload) => {
