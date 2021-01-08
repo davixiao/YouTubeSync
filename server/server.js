@@ -15,7 +15,18 @@ let sockets = [];
 
 // Run when client connects
 io.on('connection', (socket) => {
-  socket.emit('message', 'CONNECTED TO SERVER');
+  //sockets.push(socket);
+  //console.log(sockets.length);
+  socket.emit('joinRoom', 'CONNECTED TO SERVER');
+
+  // Every 5 seconds, check if users are in sync.
+  setInterval(() => {
+    socket.emit('requestTime');
+  }, 5000);
+
+  socket.on('sendTime', (currentTime) => {
+    console.log(socket.id, ':', currentTime);
+  });
 
   socket.on('_skip', (payload) => {
     //socket.broadcast.emit('server_skip', payload);
