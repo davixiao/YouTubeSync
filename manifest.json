@@ -14,5 +14,10 @@
     "default_popup": "./popup/popup.html",
     "default_title": "YoutubeSync"
   },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "permissions": ["<all_urls>", "tabs"]
 }

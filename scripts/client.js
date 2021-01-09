@@ -1,5 +1,5 @@
 // const socket = io('http://localhost:3000');
-const socket = io.connect('http://localhost:3000');
+const socket = io.connect('https://murmuring-peak-48598.herokuapp.com/');
 
 let run = false;
 let isLeader = false;
