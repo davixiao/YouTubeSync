@@ -24,10 +24,12 @@ const addUserToRoom = (room, userId) => {
 };
 
 const removeUserFromRoom = (room, userId) => {
-  const newRoom = rooms.get(room).filter((user) => user !== userId);
-  rooms.delete(room);
-  if (newRoom.length === 0) return;
-  rooms.set(room, newRoom);
+  if (roomExists(room)) {
+    const newRoom = rooms.get(room).filter((user) => user !== userId);
+    rooms.delete(room);
+    if (newRoom.length === 0) return;
+    rooms.set(room, newRoom);
+  }
 };
 
 const roomsSize = () => {

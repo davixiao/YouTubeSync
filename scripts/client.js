@@ -1,38 +1,97 @@
-//const socket = io('localhost:3000');
+// const socket = io('http://localhost:3000');
 const socket = io.connect('http://localhost:3000');
-socket.on('message', (msg) => {
-  console.log(msg);
-  socket.emit('test', 'from the client');
-});
 
 let run = false;
-let change = 0;
+let isLeader = false;
 
-const msgFront = () => {
-  //chrome.runtime.sendMessage('test');
-  // Chrome Extension API
-  // Look through available tabs for active tab
-  if (!run) return;
-  change += 10;
+socket.on('serverMessage', (msg) => {
+  console.log(msg);
+});
+
+socket.on('roomMessage', (msg) => {
+  console.log(msg);
+});
+
+socket.on('isLeader', () => {
+  //console.log('became leader');
+  isLeader = true;
+});
+
+socket.on('server_pause', (toPause) => {
+  if (!isLeader) {
+    console.log('received the pause request', toPause);
+    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      // tabs parameter should only have one element: the active tab
+      if (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          title: 'setPause',
+          payload: toPause,
+        });
+      }
+    });
+  }
+});
+//
+socket.on('adjustTime', (newTime) => {
+  if (!isLeader) {
+    console.log('received the time adjustment request', newTime);
+    if (newTime) {
+      chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+        // tabs parameter should only have one element: the active tab
+        if (tabs) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            title: 'setTime',
+            payload: newTime,
+          });
+        }
+      });
+    }
+  }
+});
+
+const getTime = (currentTime) => {
+  //console.log('sent time request: ', currentTime);
+  socket.emit('sendTime', currentTime);
+};
+
+socket.on('requestTime', () => {
+  //console.log('Received time request');
   chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
     // tabs parameter should only have one element: the active tab
-    chrome.tabs.sendMessage(tabs[0].id, change);
+    if (tabs) {
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { title: 'getTime', payload: null },
+        getTime
+      );
+    }
   });
-};
+});
 
 chrome.runtime.onMessage.addListener(({ title, payload }) => {
   console.log(title);
   switch (title) {
     case 'MSG_POPUP':
       run = !run;
+      if (run) {
+        socket.emit('joinRoom', { username: 'David', room: 'test' });
+      } else {
+        socket.emit('leaveRoom');
+      }
       break;
     case 'MSG_TIMESKIP':
-      socket.emit('_skip', payload);
+      if (isLeader) {
+        //console.log('sent a timeskip request', payload);
+        socket.emit('sendTime', payload);
+      }
       break;
     case 'MSG_PAUSE':
-      socket.emit('_pause', payload);
+      if (isLeader) {
+        //console.log('sent a pause request');
+        socket.emit('_pause', payload);
+      }
       break;
   }
 });
 
-setInterval(msgFront, 5000);
+//setInterval(msgFront, 5000);

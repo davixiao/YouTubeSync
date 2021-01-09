@@ -20,8 +20,13 @@ const {
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
-
+const io = socketio(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
 // Page display
 app.get('/', (req, res) => {
   res.send('Youtube Sync Server');
@@ -47,6 +52,19 @@ io.on('connection', (socket) => {
       .emit('roomMessage', `${client.username} has joined ${client.room}.`);
   });
 
+  socket.on('leaveRoom', () => {
+    const room = getRoomFromUser(socket.id);
+    socket.leave(room);
+    removeUserFromRoom(room, socket.id);
+    if (roomExists(room)) {
+      io.to(getLeader(room)).emit('isLeader');
+      io.to(room).emit(
+        'roomMessage',
+        `${getCurrentClient(socket.id).username} has left.`
+      );
+    }
+  });
+
   // Every 10 seconds, request for timecode from room leader.
   setInterval(() => {
     io.to(getLeader(getRoomFromUser(socket.id))).emit('requestTime');
@@ -69,10 +87,12 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const client = clientLeave(socket.id);
-    removeUserFromRoom(client.room, socket.id);
-    if (client && roomExists(client.room)) {
-      io.to(getLeader(client.room)).emit('isLeader');
-      io.to(client.room).emit('roomMessage', `${client.username} has left.`);
+    if (client) {
+      removeUserFromRoom(client.room, socket.id);
+      if (roomExists(client.room)) {
+        io.to(getLeader(client.room)).emit('isLeader');
+        io.to(client.room).emit('roomMessage', `${client.username} has left.`);
+      }
     }
   });
 });
