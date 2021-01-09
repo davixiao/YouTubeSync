@@ -36,7 +36,6 @@ const roomsSize = () => {
 
 const getLeader = (room) => {
   if (room) {
-    console.log(room);
     return rooms.get(room)[0];
   }
   return null;
