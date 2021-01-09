@@ -1,3 +1,5 @@
+const leader = document.getElementById('leader');
+
 const leaveRoom = () => {
   window.location.href = './popup.html';
   chrome.browserAction.setPopup({ popup: './popup/popup.html' });

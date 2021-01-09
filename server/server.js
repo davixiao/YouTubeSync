@@ -1,6 +1,9 @@
+// modules
 const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
+
+// file imports
 const {
   clientJoin,
   getCurrentClient,
@@ -18,6 +21,7 @@ const {
   getLeader,
 } = require('./utils/rooms.js');
 
+// server setup
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
@@ -27,6 +31,7 @@ const io = socketio(server, {
     credentials: true,
   },
 });
+
 // Page display
 app.get('/', (req, res) => {
   res.send('Youtube Sync Server');
@@ -36,7 +41,9 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   socket.emit('serverMessage', 'CONNECTED TO SERVER');
 
+  // When user joins the room
   socket.on('joinRoom', ({ username, room }) => {
+    // Either create a new room or user joins room.
     if (!roomExists(room)) {
       socket.emit('isLeader');
       addRoom(room, socket.id);
@@ -44,20 +51,33 @@ io.on('connection', (socket) => {
       addUserToRoom(room, socket.id);
     }
 
+    // Store the user/client and put them in room
     const client = clientJoin(socket.id, username, room);
     socket.join(client.room);
+
+    // tell user they have connected
     socket.emit('roomMessage', 'CONNECTED TO ROOM');
+
+    // tell user who the room leader is:
+    socket.emit('newLeader', getCurrentClient(getLeader(room)).username);
+
+    // tell other room users that user has connected
     socket.broadcast
       .to(client.room)
       .emit('roomMessage', `${client.username} has joined ${client.room}.`);
   });
 
+  // when user leaves the room
   socket.on('leaveRoom', () => {
     const room = getRoomFromUser(socket.id);
     socket.leave(room);
     removeUserFromRoom(room, socket.id);
     if (roomExists(room)) {
       io.to(getLeader(room)).emit('isLeader');
+      // tell user who the room leader is:
+      socket.broadcast
+        .to(room)
+        .emit('newLeader', getCurrentClient(getLeader(room)).username);
       io.to(room).emit(
         'roomMessage',
         `${getCurrentClient(socket.id).username} has left.`
@@ -65,32 +85,36 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Every 10 seconds, request for timecode from room leader.
+  // Every 5 seconds, request for timecode from room leader.
   setInterval(() => {
     io.to(getLeader(getRoomFromUser(socket.id))).emit('requestTime');
   }, 5000);
 
-  // receive message from party leader
+  // receive new timecode from party leader
   socket.on('sendTime', (currentTime) => {
     socket.broadcast
       .to(getRoomFromUser(socket.id))
       .emit('adjustTime', currentTime);
-    //console.log('received time request from: ', socket.id, currentTime);
   });
 
+  // when party leader sends a pause
   socket.on('_pause', (payload) => {
     socket.broadcast
       .to(getRoomFromUser(socket.id))
       .emit('server_pause', payload);
-    //console.log('paused?', payload);
   });
 
+  // user force disconnect
   socket.on('disconnect', () => {
     const client = clientLeave(socket.id);
     if (client) {
       removeUserFromRoom(client.room, socket.id);
       if (roomExists(client.room)) {
         io.to(getLeader(client.room)).emit('isLeader');
+        // tell user who the room leader is:
+        socket.broadcast
+          .to(client.room)
+          .emit('newLeader', getCurrentClient(getLeader(client.room)));
         io.to(client.room).emit('roomMessage', `${client.username} has left.`);
       }
     }

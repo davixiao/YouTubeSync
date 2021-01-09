@@ -67,6 +67,7 @@ socket.on('requestTime', () => {
     }
   });
 });
+
 chrome.runtime.onMessage.addListener(({ title, payload }) => {
   switch (title) {
     case 'MSG_POPUP':
@@ -76,6 +77,7 @@ chrome.runtime.onMessage.addListener(({ title, payload }) => {
       } else {
         socket.emit('leaveRoom');
       }
+
       break;
     case 'MSG_TIMESKIP':
       if (isLeader) {
