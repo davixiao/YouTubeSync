@@ -6,8 +6,13 @@ const roomExists = (room) => {
   return rooms.has(room);
 };
 
-const getRoomList = (room) => {
-  return rooms.get(room);
+const getRoomFromUser = (userId) => {
+  for (let [key, value] of rooms.entries()) {
+    for (let user of value) {
+      if (user === userId) return key;
+    }
+  }
+  return null;
 };
 
 const addRoom = (room, userId) => {
@@ -29,11 +34,20 @@ const roomsSize = () => {
   return rooms.size;
 };
 
+const getLeader = (room) => {
+  if (room) {
+    console.log(room);
+    return rooms.get(room)[0];
+  }
+  return null;
+};
+
 module.exports = {
   roomExists,
-  getRoomList,
+  getRoomFromUser,
   addRoom,
   addUserToRoom,
   removeUserFromRoom,
   roomsSize,
+  getLeader,
 };

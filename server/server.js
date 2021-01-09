@@ -10,11 +10,12 @@ const {
 
 const {
   roomExists,
-  getRoomList,
+  getRoomFromUser,
   addRoom,
   addUserToRoom,
   removeUserFromRoom,
   roomsSize,
+  getLeader,
 } = require('./utils/rooms.js');
 
 const app = express();
@@ -32,54 +33,45 @@ io.on('connection', (socket) => {
 
   socket.on('joinRoom', ({ username, room }) => {
     const client = clientJoin(socket.id, username, room);
+
+    socket.join(client.room);
+    socket.emit('roomMessage', 'CONNECTED TO ROOM');
     if (!roomExists(room)) {
+      socket.emit('isLeader');
       addRoom(room, socket.id);
     } else {
       addUserToRoom(room, socket.id);
     }
-    console.log(roomsSize());
-    console.log(getRoomList(room));
-    socket.join(client.room);
-    socket.emit('roomMessage', 'CONNECTED TO ROOM');
     socket.broadcast
       .to(client.room)
       .emit('roomMessage', `${client.username} has joined ${client.room}.`);
   });
 
-  // Every 5 seconds, request for timecode from room leader.
-  // setInterval(() => {
-  //   console.log('sent time request to room leader');
-  //   io.to(clients[0].id).emit('requestTime');
-  // }, 10000);
+  // Every 10 seconds, request for timecode from room leader.
+  setInterval(() => {
+    io.to(getLeader(getRoomFromUser(socket.id))).emit('requestTime');
+  }, 5000);
 
-  socket.on('sendTime', ({ currentTime }) => {
-    console.log('received time request from: ', socket.id, currentTime);
-    satisfiedRequests.push(currentTime);
-    console.log('array length: ', satisfiedRequests.length);
-    console.log('sockets length: ', sockets.length);
-    if (isSatisfied()) {
-      console.log('sent new time:', calcAvgTime());
-      io.emit('adjustTime', calcAvgTime());
-      satisfiedRequests = [];
-    }
-  });
-
-  socket.on('_skip', (payload) => {
-    //socket.broadcast.emit('server_skip', payload);
-    console.log('user skipped to', payload);
+  // receive message from party leader
+  socket.on('sendTime', (currentTime) => {
+    socket.broadcast
+      .to(getRoomFromUser(socket.id))
+      .emit('adjustTime', currentTime);
+    //console.log('received time request from: ', socket.id, currentTime);
   });
 
   socket.on('_pause', (payload) => {
-    //socket.broadcast.emit('server_pause', payload);
-    console.log('paused?', payload);
+    socket.broadcast
+      .to(getRoomFromUser(socket.id))
+      .emit('server_pause', payload);
+    //console.log('paused?', payload);
   });
 
   socket.on('disconnect', () => {
     const client = clientLeave(socket.id);
     removeUserFromRoom(client.room, socket.id);
-    console.log(roomsSize());
-    console.log(getRoomList(client.room));
-    if (client) {
+    if (client && roomExists(client.room)) {
+      io.to(getLeader(client.room)).emit('isLeader');
       io.to(client.room).emit('roomMessage', `${client.username} has left.`);
     }
   });
