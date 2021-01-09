@@ -37,16 +37,16 @@ io.on('connection', (socket) => {
   socket.emit('serverMessage', 'CONNECTED TO SERVER');
 
   socket.on('joinRoom', ({ username, room }) => {
-    const client = clientJoin(socket.id, username, room);
-
-    socket.join(client.room);
-    socket.emit('roomMessage', 'CONNECTED TO ROOM');
     if (!roomExists(room)) {
       socket.emit('isLeader');
       addRoom(room, socket.id);
     } else {
       addUserToRoom(room, socket.id);
     }
+
+    const client = clientJoin(socket.id, username, room);
+    socket.join(client.room);
+    socket.emit('roomMessage', 'CONNECTED TO ROOM');
     socket.broadcast
       .to(client.room)
       .emit('roomMessage', `${client.username} has joined ${client.room}.`);

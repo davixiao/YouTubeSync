@@ -67,14 +67,12 @@ socket.on('requestTime', () => {
     }
   });
 });
-
 chrome.runtime.onMessage.addListener(({ title, payload }) => {
-  console.log(title);
   switch (title) {
     case 'MSG_POPUP':
       run = !run;
       if (run) {
-        socket.emit('joinRoom', { username: 'David', room: 'test' });
+        socket.emit('joinRoom', payload); //{ username: 'David', room: 'test' });
       } else {
         socket.emit('leaveRoom');
       }
