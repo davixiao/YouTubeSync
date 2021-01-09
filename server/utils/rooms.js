@@ -51,4 +51,5 @@ module.exports = {
   removeUserFromRoom,
   roomsSize,
   getLeader,
+  rooms,
 };

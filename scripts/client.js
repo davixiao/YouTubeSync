@@ -19,7 +19,6 @@ socket.on('isLeader', () => {
 
 socket.on('server_pause', (toPause) => {
   if (!isLeader) {
-    console.log('received the pause request', toPause);
     chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
       // tabs parameter should only have one element: the active tab
       if (tabs) {
@@ -34,7 +33,6 @@ socket.on('server_pause', (toPause) => {
 //
 socket.on('adjustTime', (newTime) => {
   if (!isLeader) {
-    console.log('received the time adjustment request', newTime);
     if (newTime) {
       chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
         // tabs parameter should only have one element: the active tab
@@ -75,6 +73,7 @@ chrome.runtime.onMessage.addListener(({ title, payload }) => {
       if (run) {
         socket.emit('joinRoom', payload); //{ username: 'David', room: 'test' });
       } else {
+        isLeader = false;
         socket.emit('leaveRoom');
       }
 

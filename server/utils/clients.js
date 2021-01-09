@@ -14,8 +14,11 @@ const getCurrentClient = (id) => {
 
 // Client leaves
 const clientLeave = (id) => {
-  const left = clients.filter((client) => client.id === id)[0];
-  clients = clients.filter((client) => client.id !== id);
+  const ind = clients.findIndex((user) => user.id === id);
+  const left = clients[ind];
+  clients.splice(ind, 1);
+
+  //clients = clients.filter((client) => client.id !== id);
   return left;
 };
 
@@ -29,4 +32,5 @@ module.exports = {
   getCurrentClient,
   clientLeave,
   getRoomClients,
+  clients,
 };

@@ -9,6 +9,7 @@ const {
   getCurrentClient,
   clientLeave,
   getRoomClients,
+  clients,
 } = require('./utils/clients.js');
 
 const {
@@ -19,6 +20,7 @@ const {
   removeUserFromRoom,
   roomsSize,
   getLeader,
+  rooms,
 } = require('./utils/rooms.js');
 
 // server setup
@@ -83,11 +85,14 @@ io.on('connection', (socket) => {
         `${getCurrentClient(socket.id).username} has left.`
       );
     }
+    clientLeave(socket.id);
   });
 
   // Every 5 seconds, request for timecode from room leader.
   setInterval(() => {
-    io.to(getLeader(getRoomFromUser(socket.id))).emit('requestTime');
+    if (getRoomFromUser(socket.id)) {
+      io.to(getLeader(getRoomFromUser(socket.id))).emit('requestTime');
+    }
   }, 5000);
 
   // receive new timecode from party leader
