@@ -96,10 +96,8 @@ io.on('connection', (socket) => {
   }, 5000);
 
   // receive new timecode from party leader
-  socket.on('sendTime', (currentTime) => {
-    socket.broadcast
-      .to(getRoomFromUser(socket.id))
-      .emit('adjustTime', currentTime);
+  socket.on('sendTime', (payload) => {
+    socket.broadcast.to(getRoomFromUser(socket.id)).emit('adjustTime', payload);
   });
 
   // when party leader sends a pause

@@ -31,15 +31,15 @@ socket.on('server_pause', (toPause) => {
   }
 });
 //
-socket.on('adjustTime', (newTime) => {
+socket.on('adjustTime', (currentTime) => {
   if (!isLeader) {
-    if (newTime) {
+    if (currentTime) {
       chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
         // tabs parameter should only have one element: the active tab
         if (tabs) {
           chrome.tabs.sendMessage(tabs[0].id, {
             title: 'setTime',
-            payload: newTime,
+            payload: currentTime,
           });
         }
       });
