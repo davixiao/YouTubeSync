@@ -6,7 +6,16 @@ const {
   getCurrentClient,
   clientLeave,
   getRoomClients,
-} = require('./clients.js');
+} = require('./utils/clients.js');
+
+const {
+  roomExists,
+  getRoomList,
+  addRoom,
+  addUserToRoom,
+  removeUserFromRoom,
+  roomsSize,
+} = require('./utils/rooms.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -23,12 +32,18 @@ io.on('connection', (socket) => {
 
   socket.on('joinRoom', ({ username, room }) => {
     const client = clientJoin(socket.id, username, room);
+    if (!roomExists(room)) {
+      addRoom(room, socket.id);
+    } else {
+      addUserToRoom(room, socket.id);
+    }
+    console.log(roomsSize());
+    console.log(getRoomList(room));
     socket.join(client.room);
     socket.emit('roomMessage', 'CONNECTED TO ROOM');
     socket.broadcast
       .to(client.room)
       .emit('roomMessage', `${client.username} has joined ${client.room}.`);
-    io.to(client.room).emit('roomMessage', getRoomClients(client.room));
   });
 
   // Every 5 seconds, request for timecode from room leader.
@@ -61,9 +76,11 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     const client = clientLeave(socket.id);
+    removeUserFromRoom(client.room, socket.id);
+    console.log(roomsSize());
+    console.log(getRoomList(client.room));
     if (client) {
       io.to(client.room).emit('roomMessage', `${client.username} has left.`);
-      io.to(client.room).emit('roomMessage', getRoomClients(client.room));
     }
   });
 });
