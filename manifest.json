@@ -15,9 +15,9 @@
     "default_title": "YoutubeSync"
   },
   "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
+    "16": "./images/icon.png",
+    "48": "./images/icon.png",
+    "128": "./images/icon.png"
   },
   "permissions": ["<all_urls>", "tabs"]
 }
