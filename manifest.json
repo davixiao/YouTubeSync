@@ -19,5 +19,5 @@
     "48": "./images/icon.png",
     "128": "./images/icon.png"
   },
-  "permissions": ["https://*.youtube.com", "tabs"]
+  "permissions": ["*://youtube.com/*", "tabs"]
 }
