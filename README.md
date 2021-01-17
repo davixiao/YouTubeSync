@@ -23,3 +23,5 @@ joined after the leader is promoted.
 </p>
 
 Visit the following <a href="https://www.youtube.com/watch?v=buGNYB5Scd0" target="_blank" rel="noopener noreferrer" >link</a> for a video demonstration of the extension.
+
+Note, will be published on chrome store shortly. Need to deal with a few picky chrome store rules before it can be accepted!
